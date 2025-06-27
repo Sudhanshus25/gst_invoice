@@ -1,0 +1,24 @@
+{
+    "name": "hp/gst_invoice",
+    "description": "GST Invoice Generator for Bitrix24",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Hp\\GstInvoice\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "sudhanshus25",
+            "email": "sudhanshus5694@gmail.com"
+        }
+    ],
+    "require": {
+        "mpdf/mpdf": "^6.1",
+        "phpmailer/phpmailer": "^6.10",
+        "vlucas/phpdotenv": "^5.6",
+        "dompdf/dompdf": "^3.1",
+        "ext-json": "*",
+        "ext-pdo": "*"
+    }
+}

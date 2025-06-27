@@ -1,0 +1,45 @@
+<?php
+namespace GSTInvoice;
+
+class Invoice {
+    private $db;
+    
+    public function __construct() {
+        $this->db = \Database::getInstance();
+    }
+    
+    public function create(array $data) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Save invoice
+            $stmt = $this->db->prepare("INSERT INTO invoices (...) VALUES (...)");
+            $stmt->execute([...]);
+            $invoiceId = $this->db->lastInsertId();
+            
+            // Save items
+            foreach ($data['items'] as $item) {
+                $this->addItem($invoiceId, $item);
+            }
+            
+            $this->db->commit();
+            return $invoiceId;
+        } catch (\PDOException $e) {
+            $this->db->rollBack();
+            throw new \Exception("Invoice creation failed: " . $e->getMessage());
+        }
+    }
+    
+    public function addItem($invoiceId, array $item) {
+        $stmt = $this->db->prepare("INSERT INTO invoice_items (...) VALUES (...)");
+        $stmt->execute([...]);
+    }
+    
+    public function getById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM invoices WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+    
+    // Additional methods for update, delete, listing, etc.
+}
