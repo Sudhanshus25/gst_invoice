@@ -1,23 +1,28 @@
-# Use the official PHP + Apache image
+# Use official PHP with Apache
 FROM php:8.2-apache
 
-# Enable Apache modules
+# Enable mod_rewrite (optional, good for routing)
 RUN a2enmod rewrite
 
-# Install required packages and Composer
+# Install dependencies needed for Composer
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     git \
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    zip
 
-# Set the working directory
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer
+
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy your application files into the container
+# Copy all files to the container
 COPY . .
 
-# Only run composer install if composer.json exists
-RUN if [ -f composer.json ]; then composer install; fi
+# Run composer install if composer.json exists
+RUN test -f composer.json && composer install --no-interaction --prefer-dist --optimize-autoloader || true
 
+# Expose Apache port
 EXPOSE 80
