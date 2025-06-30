@@ -1,12 +1,13 @@
 class GSTInvoiceApp {
     constructor() {
-        this.businessState = '24'; // Default: Maharashtra
+        this.businessState = ''; // Default: Maharashtra
         this.currentInvoiceId = null;
         this.baseUrl = window.location.origin + (window.location.pathname.includes('gst_invoice') ? '/gst_invoice/' : '/');
         this.init();
     }
 
     async init() {
+        await this.loadBusinessSettings();
         this.setupEventListeners();
         this.generateInvoiceNumber();
         await this.loadCustomers();
@@ -14,6 +15,18 @@ class GSTInvoiceApp {
         this.setDefaultDates();
         this.updateTaxRates();
         this.checkBitrixConnection();
+    }
+
+    async loadBusinessSettings() {
+        try {
+            const response = await $.get(`${this.baseUrl}api/get_business_settings.php`);
+            this.businessState = response.state_code;
+            $('#business-name').val(response.name);
+            $('#business-gstin').val(response.gstin);
+            $('#business-address').val(response.address);
+        } catch (error) {
+            console.error('Failed to load business settings:', error);
+        }
     }
 
     setupEventListeners() {
@@ -145,11 +158,11 @@ class GSTInvoiceApp {
     }
 
     updateTaxRates() {
-        const stateCode = $('#customer-state').val();
+        const customerState = $('#customer-state').val();
         const taxContainer = $('#tax-container');
         taxContainer.empty();
         
-        if (!stateCode) {
+        if (!customerState || !this.businessState) {
             $('#total').text(`₹${parseFloat($('#subtotal').text().replace('₹', '') || 0)}`);
             return;
         }
@@ -158,10 +171,11 @@ class GSTInvoiceApp {
         let taxHTML = '';
         let totalTax = 0;
         
-        if (stateCode === this.businessState) {
-            // CGST + SGST
-            const cgstRate = 9;
-            const sgstRate = 9;
+        // Intra-state transaction (same state)
+        if (customerState === this.businessState) {
+            // CGST + SGST (equal split)
+            const cgstRate = 9; // Example rate (total 18% GST)
+            const sgstRate = 9; // Example rate (total 18% GST)
             const cgstAmount = (subtotal * cgstRate / 100);
             const sgstAmount = (subtotal * sgstRate / 100);
             totalTax = cgstAmount + sgstAmount;
@@ -176,9 +190,11 @@ class GSTInvoiceApp {
                     <div class="col-6 text-end">₹${sgstAmount.toFixed(2)}</div>
                 </div>
             `;
-        } else {
-            // IGST
-            const igstRate = 18;
+        } 
+        // Inter-state transaction
+        else {
+            // IGST (single tax)
+            const igstRate = 18; // Example rate
             const igstAmount = (subtotal * igstRate / 100);
             totalTax = igstAmount;
             
