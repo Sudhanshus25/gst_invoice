@@ -227,16 +227,46 @@ class GSTInvoiceApp {
 
     async loadCustomers() {
         try {
-            const response = await $.get(`${this.baseUrl}api/get_customers.php`);
+            const response = await $.ajax({
+                url: `${this.baseUrl}api/get_customers.php`,
+                dataType: 'json',
+                // timeout: 5000 // 5 second timeout
+            });
+
+            if (!response.success) {
+                throw new Error(response.message || 'Failed to load customers');
+            }
+
             const dropdown = $('#customer-select');
             dropdown.empty().append('<option value="">Select Customer</option>');
-            response.forEach(customer => {
-                dropdown.append(`<option value="${customer.id}">${customer.name} (${customer.gstin})</option>`);
-            });
+            
+            if (response.data && response.data.length > 0) {
+                response.data.forEach(customer => {
+                    dropdown.append(
+                        `<option value="${customer.id}" 
+                        data-gstin="${customer.gstin || ''}"
+                        data-state="${customer.state_code || ''}"
+                        data-address="${customer.address || ''}">
+                        ${customer.name}${customer.gstin ? ` (${customer.gstin})` : ''}
+                        </option>`
+                    );
+                });
+            } else {
+                this.showAlert('Info', 'No customers found in database', 'info');
+            }
+            
             dropdown.append('<option value="new">+ Add New Customer</option>');
+            
         } catch (error) {
             console.error('Failed to load customers:', error);
-            this.showAlert('Error', 'Failed to load customers', 'error');
+            this.showAlert('Error', 
+                `Failed to load customers: ${error.message || 'Unknown error'}`, 
+                'error');
+            
+            // Check if it's a connection error
+            if (error.statusText === 'timeout' || error.status === 0) {
+                console.error('Server might be down or CORS issue');
+            }
         }
     }
 
@@ -247,7 +277,7 @@ class GSTInvoiceApp {
             $('#customer-name, #customer-gstin, #customer-state, #customer-address').val('');
         } else if (customerId) {
             try {
-                const response = await $.get(`${this.baseUrl}api/get_customer.php?id=${customerId}`);
+                const response = await $.get(`${this.baseUrl}api/get_customers.php?id=${customerId}`);
                 $('#customer-name').val(response.name);
                 $('#customer-gstin').val(response.gstin);
                 $('#customer-state').val(response.state);
@@ -463,4 +493,178 @@ class GSTInvoiceApp {
 // Initialize the application when DOM is ready
 $(document).ready(() => {
     window.invoiceApp = new GSTInvoiceApp();
+
+    // When customer state changes
+    $('#customer-state').change(function() {
+        updateTaxFields();
+        calculateTotal();
+    });
+    
+    // Function to update tax fields based on customer state
+    function updateTaxFields() {
+        const businessState = '22'; // Your business state code (e.g., 22 for Chhattisgarh)
+        const customerState = $('#customer-state').val();
+        const taxContainer = $('#tax-container');
+        taxContainer.empty(); // Clear existing tax fields
+        
+        if (!customerState) {
+            return; // No state selected
+        }
+        
+        if (customerState === businessState) {
+            // Same state - show CGST + SGST
+            taxContainer.append(`
+                <div class="row mb-2">
+                    <div class="col-6 text-end">CGST (9%):</div>
+                    <div class="col-6 text-end" id="cgst-value">₹0.00</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6 text-end">SGST (9%):</div>
+                    <div class="col-6 text-end" id="sgst-value">₹0.00</div>
+                </div>
+            `);
+        } else {
+            // Different state - show IGST
+            taxContainer.append(`
+                <div class="row mb-2">
+                    <div class="col-6 text-end">IGST (18%):</div>
+                    <div class="col-6 text-end" id="igst-value">₹0.00</div>
+                </div>
+            `);
+        }
+    }
+    
+    // Function to calculate taxes and total
+    function calculateTotal() {
+        let subtotal = 0;
+        
+        // Calculate subtotal from items
+        $('#invoice-items tbody tr').each(function() {
+            const qty = parseFloat($(this).find('.item-qty').val()) || 0;
+            const rate = parseFloat($(this).find('.item-rate').val()) || 0;
+            const amount = qty * rate;
+            $(this).find('.item-amount').val(amount.toFixed(2));
+            subtotal += amount;
+        });
+        
+        $('#subtotal').text('₹' + subtotal.toFixed(2));
+        
+        // Calculate taxes
+        const businessState = '22'; // Your business state code
+        const customerState = $('#customer-state').val();
+        let totalTax = 0;
+        
+        if (customerState === businessState) {
+            // Same state - CGST + SGST (9% each)
+            const cgst = subtotal * 0.09;
+            const sgst = subtotal * 0.09;
+            $('#cgst-value').text('₹' + cgst.toFixed(2));
+            $('#sgst-value').text('₹' + sgst.toFixed(2));
+            totalTax = cgst + sgst;
+        } else if (customerState) {
+            // Different state - IGST (18%)
+            const igst = subtotal * 0.18;
+            $('#igst-value').text('₹' + igst.toFixed(2));
+            totalTax = igst;
+        }
+        
+        // Calculate total
+        const total = subtotal + totalTax;
+        $('#total').text('₹' + total.toFixed(2));
+    }
+    
+    // Update totals when item quantities or rates change
+    $(document).on('change', '.item-qty, .item-rate', calculateTotal);
+    
+    // Initialize tax fields
+    updateTaxFields();
+});
+
+// In your products.php JavaScript
+$(document).ready(function() {
+    // Load products
+    function loadProducts() {
+        $.get('api/bitrix_products.php', function(response) {
+            if (response.success) {
+                renderProducts(response.data);
+            } else {
+                alert('Error loading products: ' + response.message);
+            }
+        });
+    }
+    
+    // Sync products
+    $('#sync-bitrix').click(function() {
+        $(this).html('<span class="spinner-border spinner-border-sm"></span> Syncing...');
+        
+        $.post('api/bitrix_products.php?action=sync', function(response) {
+            if (response.success) {
+                alert('Synced ' + response.count + ' products');
+                loadProducts();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }).always(() => {
+            $('#sync-bitrix').html('<i class="bi bi-plug"></i> Sync with Bitrix24');
+        });
+    });
+
+     // Sync Bitrix products form handler
+    $('#sync-bitrix-form').submit(function(e) {
+        e.preventDefault();
+        const $btn = $('#sync-bitrix-btn');
+        $btn.html('<span class="spinner-border spinner-border-sm"></span> Syncing...');
+        $btn.prop('disabled', true);
+        
+        $.ajax({
+            url: 'api/bitrix_products.php?action=sync',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    alert('Successfully synced ' + response.count + ' products from Bitrix24');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                alert('Error syncing products: ' + xhr.statusText);
+            },
+            complete: function() {
+                $btn.html('<i class="bi bi-arrow-repeat"></i> Sync Products from Bitrix24');
+                $btn.prop('disabled', false);
+            }
+        });
+    });
+    
+    // Import product
+    $(document).on('click', '.import-product', function() {
+        const productId = $(this).data('id').replace('bitrix_', '');
+        const hsnSac = prompt('Enter HSN/SAC code for this product:');
+        const type = prompt('Enter product type (goods/service):', 'service');
+        
+        if (hsnSac !== null) {
+            $.ajax({
+                url: 'api/bitrix_products.php?action=import',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    product_id: productId,
+                    hsn_sac: hsnSac,
+                    type: type
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        alert('Product ' + response.action + ' successfully!');
+                        loadProducts();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                }
+            });
+        }
+    });
+    
+    // Initial load
+    loadProducts();
 });

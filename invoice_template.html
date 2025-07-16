@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style> 
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .company-address {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .gstin {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        .bill-to {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .bill-to h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .delivery-info {
+            margin: 15px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f2f2f2;
+        }
+        .amount-summary {
+            float: right;
+            width: 300px;
+            margin-top: 20px;
+        }
+        .amount-summary div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .total-amount {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+        }
+        .terms {
+            margin-top: 30px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <div class="company-name" id="company-name">Instloo Private Limited</div>
+            <div class="company-address" id="company-address">A 2402, Prateeek Edifice Sector 107 Noida 201304</div>
+            <div class="gstin" id="company-gstin">GSTIN: 09AAECI8350C1ZN</div>
+        </div>
+
+        <div class="invoice-info">
+            <div>
+                <strong>Invoice No.:</strong> <span id="invoice-number">47</span>
+            </div>
+            <div>
+                <strong>Invoice Date:</strong> <span id="invoice-date">24/06/2025</span>
+            </div>
+            <div>
+                <strong>Order#:</strong> <span id="order-number"></span>
+            </div>
+        </div>
+
+        <div class="bill-to">
+            <h2>Bill To</h2>
+            <div id="customer-name"><strong>Prashant Sinha</strong></div>
+            <div id="customer-contact">
+                Tel.: +91 81781 36060<br>
+                Email: info@instloo.com<br>
+                Website: https://instloo.com<br>
+                Fax:
+            </div>
+        </div>
+
+        <div class="delivery-info">
+            <strong>Place of Delivery</strong><br>
+            GSTIN: <span id="delivery-gstin"></span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Item</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="invoice-items">
+                <tr>
+                    <td>1</td>
+                    <td>Website Development</td>
+                    <td></td>
+                    <td>1</td>
+                    <td>12,000</td>
+                    <td>0%</td>
+                    <td>14%</td>
+                    <td>12,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="amount-summary">
+            <div>
+                <span>Net Amount</span>
+                <span id="net-amount">Rs. 12,000.00</span>
+            </div>
+            <div>
+                <span>Discount</span>
+                <span id="discount">Rs. 0.00</span>
+            </div>
+            <div>
+                <span>GST 14%</span>
+                <span id="total-tax">Rs. 1,680.00</span>
+            </div>
+            <div>
+                <span>CGST</span>
+                <span id="cgst">840</span>
+            </div>
+            <div>
+                <span>SGST</span>
+                <span id="sgst">840</span>
+            </div>
+            <div>
+                <span>Tax Total</span>
+                <span id="tax-total">Rs. 1,680.00</span>
+            </div>
+            <div class="total-amount">
+                <span>Amount Due</span>
+                <span id="total-amount">Rs. 13,680.00</span>
+            </div>
+        </div>
+
+        <div class="terms">
+            <strong>Terms & Conditions</strong><br>
+            *Total Payment due before delivery.<br>
+            *Goods once sold will not be taken back<br>
+            *Please include the invoice number on your Cheque<br>
+            *Cheque bounce charges Rs. 500 will be charged.<br>
+            *warranty/guarantee is responsible to Principal company
+        </div>
+
+        <div class="signature">
+            Authorized Signature
+        </div>
+
+        <div class="footer">
+            Thank you for your business!
+        </div>
+    </div>
+</body>
+</html>
