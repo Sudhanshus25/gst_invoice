@@ -8,6 +8,88 @@ $conn = $db->getConnection();
 
 $bitrixProducts = [];
 
+
+// Bitrix24 Configuration
+define('BITRIX_API_URL', 'https://instloo.bitrix24.in/rest/93/bvch19vdppk00jfp/');
+define('BITRIX_PRODUCT_LIST_METHOD', 'crm.product.list.json');
+
+// Handle manual sync
+if (isset($_GET['test_sync'])) {
+    try {
+        // Build the API URL
+        $url = BITRIX_API_URL . BITRIX_PRODUCT_LIST_METHOD;
+        
+        // Fetch products from Bitrix24
+        $response = file_get_contents($url);
+        if ($response === false) {
+            throw new Exception("Failed to connect to Bitrix24 API");
+        }
+        
+        $bitrixProducts = json_decode($response, true);
+        
+        if (!$bitrixProducts || !isset($bitrixProducts['result'])) {
+            throw new Exception("Invalid response from Bitrix24 API");
+        }
+        
+        $count = 0;
+        foreach ($bitrixProducts['result'] as $bitrixProduct) {
+            // Map Bitrix fields to your database structure
+            $productData = [
+                'bitrix_id' => $bitrixProduct['ID'],
+                'name' => $bitrixProduct['NAME'],
+                'rate' => $bitrixProduct['PRICE'],
+                'tax_rate' => ($bitrixProduct['VAT_INCLUDED'] === 'Y') ? 18 : 0,
+                'is_service' => 1, // Default to service (adjust as needed)
+                'hsn_sac_code' => $bitrixProduct['CODE'] ?? '', // Using CODE as HSN/SAC if available
+                'description' => $bitrixProduct['DESCRIPTION'] ?? ''
+            ];
+            
+            // Check if exists
+            $stmt = $conn->prepare("SELECT id FROM products WHERE bitrix_id = ?");
+            $stmt->execute([$productData['bitrix_id']]);
+            $existing = $stmt->fetch();
+            
+            if ($existing) {
+                // Update existing product
+                $stmt = $conn->prepare("UPDATE products SET 
+                    name = ?, rate = ?, tax_rate = ?, description = ?, hsn_sac_code = ?
+                    WHERE bitrix_id = ?");
+                $stmt->execute([
+                    $productData['name'],
+                    $productData['rate'],
+                    $productData['tax_rate'],
+                    $productData['description'],
+                    $productData['hsn_sac_code'],
+                    $productData['bitrix_id']
+                ]);
+            } else {
+                // Insert new product
+                $stmt = $conn->prepare("INSERT INTO products 
+                    (name, rate, tax_rate, is_service, hsn_sac_code, description, bitrix_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $productData['name'],
+                    $productData['rate'],
+                    $productData['tax_rate'],
+                    $productData['is_service'],
+                    $productData['hsn_sac_code'],
+                    $productData['description'],
+                    $productData['bitrix_id']
+                ]);
+            }
+            $count++;
+        }
+        
+        header("Location: products.php?message=" . urlencode("Synced $count products from Bitrix24"));
+        exit;
+    } catch (Exception $e) {
+        header("Location: products.php?error=" . urlencode("Sync failed: " . $e->getMessage()));
+        exit;
+    }
+}
+
+
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -98,6 +180,10 @@ $products = $conn->query("SELECT * FROM products ORDER BY name")->fetchAll(PDO::
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">
                 <i class="bi bi-plus"></i> Add Product
             </button>
+
+             <a href="products.php?test_sync=1" class="btn btn-success" id="test-sync-btn">
+                <i class="bi bi-arrow-repeat"></i> Sync from Bitrix24
+            </a>
             
             <form method="post" class="d-inline" id="sync-bitrix-form">
                 <input type="hidden" name="action" value="sync_bitrix">

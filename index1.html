@@ -35,28 +35,30 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/products.php" data-bs-toggle="tab">
+                            <a class="nav-link" href="products.php">
                                 <i class="bi bi-box-seam me-2"></i>Product Catalog
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#customers" data-bs-toggle="tab">
+                            <a class="nav-link" href="customers.php">
                                 <i class="bi bi-people me-2"></i>Customers
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#reports" data-bs-toggle="tab">
+                            <a class="nav-link" href="reports.php">
                                 <i class="bi bi-graph-up me-2"></i>GSTR Reports
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#settings" data-bs-toggle="tab">
+                            <a class="nav-link" href="settings.php">
                                 <i class="bi bi-gear me-2"></i>Settings
                             </a>
                         </li>
                     </ul>
                 </div>
             </nav>
+
+<div id="alerts-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999"></div>
 
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -87,7 +89,7 @@
                                     <div class="card-body">
                                         <h5 class="card-title">Revenue This Month</h5>
                                         <h2 class="card-text" id="month-revenue">₹0.00</h2>
-                                        <a href="#reports" class="text-white">View Reports</a>
+                                        <a href="reports.php" class="text-white">View Reports</a>
                                     </div>
                                 </div>
                             </div>
@@ -114,8 +116,8 @@
                                                 <th>Invoice #</th>
                                                 <th>Date</th>
                                                 <th>Customer</th>
-                                                <th>GSTIN</th>
                                                 <th>Amount</th>
+                                                <th>GSTIN</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
                                             </tr>
@@ -148,117 +150,127 @@
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0">From</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Business Name</label>
-                                            <input type="text" class="form-control" id="business-name" value="Your Company Name">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">GSTIN</label>
-                                            <input type="text" class="form-control" id="business-gstin" value="22AAAAA0000A1Z5">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Address</label>
-                                            <textarea class="form-control" id="business-address" rows="3">123 Business Street, City, State - 123456</textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0">Bill To</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Select Customer</label>
-                                            <select class="form-select" id="customer-select">
-                                                <option value="">Select or add new</option>
-                                                <option value="new">+ Add New Customer</option>
-                                            </select>
-                                        </div>
-                                        <div id="customer-details">
-                                            <div class="mb-3">
-                                                <label class="form-label">Customer Name</label>
-                                                <input type="text" class="form-control" id="customer-name">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">GSTIN</label>
-                                                <input type="text" class="form-control" id="customer-gstin">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">State</label>
-                                                <select class="form-select" id="customer-state">
-                                                    <option value="">Select State</option>
-                                                    <!-- States will be populated by JavaScript -->
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Address</label>
-                                                <textarea class="form-control" id="customer-address" rows="3"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                       <!-- Simplified Customer Selection -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">From (Bill From)</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Business Name</label>
+                    <input type="text" class="form-control" id="business-name" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">GSTIN</label>
+                    <input type="text" class="form-control" id="business-gstin" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" id="business-address" rows="2" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Bill To</h5>
+                <button class="btn btn-sm btn-outline-primary" id="add-customer-btn">
+                    <i class="bi bi-plus"></i> Add Customer
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Select Customer</label>
+                    <select class="form-select" id="customer-select">
+                        <option value="">Select Customer</option>
+                        <!-- Customers will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div id="customer-details">
+                    <div class="mb-3">
+                        <label class="form-label">Customer Name</label>
+                        <input type="text" class="form-control" id="customer-name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">GSTIN</label>
+                        <input type="text" class="form-control" id="customer-gstin" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" id="customer-address" rows="2" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-                        <!-- Invoice Details -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <h5 class="mb-0">Invoice Details</h5>
-                                    </div>
-                                    <div class="col-md-8 text-end">
-                                        <div class="row g-2">
-                                            <div class="col-md-4">
-                                                <input type="text" class="form-control form-control-sm" id="invoice-number" placeholder="Invoice #" readonly>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <input type="date" class="form-control form-control-sm" id="invoice-date">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <input type="date" class="form-control form-control-sm" id="due-date">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body">
+
+                        <!-- Improved Invoice Details Header -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h5 class="mb-0">Invoice Details</h5>
+            </div>
+            <div class="col-md-8">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-1">Invoice Number</label>
+                        <input type="text" class="form-control form-control-sm" id="invoice-number" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-1">Invoice Date</label>
+                        <input type="date" class="form-control form-control-sm" id="invoice-date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-1">Due Date</label>
+                        <input type="date" class="form-control form-control-sm" id="due-date">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table" id="invoice-items">
                                         <thead>
                                             <tr>
-                                                <th width="5%">#</th>
-                                                <th width="40%">Description</th>
+                                                <th width="30%">Item Details</th>
                                                 <th width="10%">HSN/SAC</th>
-                                                <th width="10%">Qty</th>
-                                                <th width="15%">Rate</th>
-                                                <th width="15%">Amount</th>
-                                                <th width="5%"></th>
+                                                <th width="8%">Qty</th>
+                                                <th width="12%">Rate</th>
+                                                <th width="10%">Discount %</th>
+                                                <th width="12%">Tax Rate %</th>
+                                                <th width="12%">Amount</th>
+                                                <th width="6%"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td>1</td>
                                                 <td>
-                                                    <input type="text" class="form-control form-control-sm item-description" placeholder="Item description">
+                                                    <input type="text" class="form-control form-control-sm item-description" 
+                                                        placeholder="Type or click to select an item" autocomplete="off">
+                                                    <div class="dropdown-menu w-100 item-suggestions"></div>
+                                                    <!-- <small class="text-muted">Thanks for your business. Will be displayed on the invoice</small> -->
                                                 </td>
                                                 <td>
                                                     <input type="text" class="form-control form-control-sm item-hsn" placeholder="HSN/SAC">
                                                 </td>
                                                 <td>
-                                                    <input type="number" class="form-control form-control-sm item-qty" value="1" min="1">
+                                                    <input type="number" class="form-control form-control-sm item-qty" value="1" min="0.01" step="0.01">
                                                 </td>
                                                 <td>
                                                     <input type="number" class="form-control form-control-sm item-rate" value="0.00" min="0" step="0.01">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm item-discount" value="0" min="0" max="100" step="0.01">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm item-tax" value="18" min="0" max="100" step="0.01">
                                                 </td>
                                                 <td>
                                                     <input type="text" class="form-control form-control-sm item-amount" value="0.00" readonly>
@@ -272,9 +284,9 @@
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colspan="7" class="text-end">
+                                                <td colspan="8" class="text-end">
                                                     <button class="btn btn-sm btn-primary" id="add-item">
-                                                        <i class="bi bi-plus-circle"></i> Add Item
+                                                        <i class="bi bi-plus-circle"></i> Add New Item
                                                     </button>
                                                 </td>
                                             </tr>
@@ -284,74 +296,156 @@
                             </div>
                         </div>
 
-                        <!-- Tax and Total -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card mb-4">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0">Additional Details</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Notes</label>
-                                            <textarea class="form-control" id="invoice-notes" rows="3"></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Terms & Conditions</label>
-                                            <textarea class="form-control" id="invoice-terms" rows="3"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Improved Additional Details Section -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Notes</h5>
+                </div>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="invoice-notes" rows="2" placeholder="Add any notes for this invoice"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Terms & Conditions</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="add-term-btn">
+                        <i class="bi bi-plus"></i> Add Term
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush" id="terms-list">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Payment due within 15 days
+                        <button class="btn btn-sm btn-outline-danger remove-term">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Late payment interest of 1.5% per month
+                        <button class="btn btn-sm btn-outline-danger remove-term">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Improved Tax & Total Section -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-2">
+            <div class="col-6 text-end">Subtotal:</div>
+            <div class="col-6 text-end" id="subtotal">₹0.00</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6 text-end">Discount:</div>
+            <div class="col-6 text-end" id="total-discount">-₹0.00</div>
+        </div>
+        <div id="tax-container">
+            <!-- Taxes will be added here dynamically -->
+        </div>
+        <div class="row mt-3 pt-2 border-top">
+            <div class="col-6 text-end fw-bold">Total:</div>
+            <div class="col-6 text-end fw-bold" id="total">₹0.00</div>
+        </div>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <button class="btn btn-outline-secondary me-md-2" id="save-draft">
+                <i class="bi bi-save"></i> Save Draft
+            </button>
+            <button class="btn btn-outline-primary me-md-2" id="preview-invoice">
+                <i class="bi bi-eye"></i> Preview
+            </button>
+            <button class="btn btn-success" id="generate-invoice">
+                <i class="bi bi-file-earmark-pdf"></i> Generate PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+                    <!-- Bitrix Integration Tab -->
+                    <div class="tab-pane fade" id="bitrix-integration">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Bitrix24 Integration</h1>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Connection Settings</h5>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card mb-4">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0">Tax & Total</h5>
+                            <div class="card-body">
+                                <form id="bitrix-settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Webhook URL</label>
+                                        <input type="url" class="form-control" id="bitrix-webhook" required>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="row mb-2">
-                                            <div class="col-6 text-end">Subtotal:</div>
-                                            <div class="col-6 text-end" id="subtotal">₹0.00</div>
-                                        </div>
-                                        <div id="tax-container">
-                                            <!-- Taxes will be added here dynamically based on state -->
-                                        </div>
-                                        <div class="row mt-2 fw-bold">
-                                            <div class="col-6 text-end">Total:</div>
-                                            <div class="col-6 text-end" id="total">₹0.00</div>
-                                        </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Auth Token</label>
+                                        <input type="text" class="form-control" id="bitrix-token" required>
                                     </div>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <button class="btn btn-success" id="finalize-invoice">
-                                        <i class="bi bi-file-earmark-check"></i> Finalize Invoice
+                                    <div class="mb-3">
+                                        <label class="form-label">Invoice Template ID</label>
+                                        <input type="text" class="form-control" id="bitrix-template">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                                    <button type="button" class="btn btn-success ms-2" id="test-connection">
+                                        <i class="bi bi-plug"></i> Test Connection
                                     </button>
-                                    <button class="btn btn-primary" id="send-email">
-                                        <i class="bi bi-envelope"></i> Send via Email
-                                    </button>
-                                    <button class="btn btn-warning" id="bitrix-sync">
-                                        <i class="bi bi-plug"></i> Sync with Bitrix24
-                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Sync Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table" id="sync-status">
+                                        <thead>
+                                            <tr>
+                                                <th>Entity Type</th>
+                                                <th>Last Sync</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Customers</td>
+                                                <td id="customer-sync-time">Never</td>
+                                                <td id="customer-sync-status">Not synced</td>
+                                                <td><button class="btn btn-sm btn-outline-primary sync-now" data-type="customer">Sync Now</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Products</td>
+                                                <td id="product-sync-time">Never</td>
+                                                <td id="product-sync-status">Not synced</td>
+                                                <td><button class="btn btn-sm btn-outline-primary sync-now" data-type="product">Sync Now</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Invoices</td>
+                                                <td id="invoice-sync-time">Never</td>
+                                                <td id="invoice-sync-status">Not synced</td>
+                                                <td><button class="btn btn-sm btn-outline-primary sync-now" data-type="invoice">Sync Now</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Other tabs would go here -->
-                    <div class="tab-pane fade" id="bitrix-integration">
-                        <!-- Bitrix Integration content -->
-                    </div>
-                    <div class="tab-pane fade" id="products">
-                        <!-- Product Catalog content -->
-                    </div>
-                    <div class="tab-pane fade" id="customers">
-                        <!-- Customers content -->
-                    </div>
-                    <div class="tab-pane fade" id="reports">
-                        <!-- Reports content -->
-                    </div>
-                    <div class="tab-pane fade" id="settings">
-                        <!-- Settings content -->
                     </div>
                 </div>
             </main>
@@ -389,262 +483,119 @@
     <script>
         // Initialize the application
         $(document).ready(function() {
-            // Generate a sample invoice number
-            const now = new Date();
-            const invoiceNumber = `INV${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-            $('#invoice-number').val(invoiceNumber);
+            // Load dashboard stats
+            loadDashboardStats();
             
-            // Set default dates
-            $('#invoice-date').val(now.toISOString().split('T')[0]);
+            // Set up event listeners
+            $('#refresh-dashboard').click(loadDashboardStats);
+            $('.sync-now').click(syncWithBitrix);
+            $('#test-connection').click(testBitrixConnection);
+            $('#bitrix-settings-form').submit(saveBitrixSettings);
             
-            const dueDate = new Date();
-            dueDate.setDate(now.getDate() + 15);
-            $('#due-date').val(dueDate.toISOString().split('T')[0]);
-            
-            // Load Indian states for dropdown
-            loadIndianStates();
-            
-            // Add event listeners
-            $('#add-item').click(addNewItemRow);
-            $('body').on('click', '.remove-item', removeItemRow);
-            $('body').on('input', '.item-qty, .item-rate', calculateItemAmount);
-            $('#customer-state').change(updateTaxRates);
-            $('#preview-invoice').click(showInvoicePreview);
+            // Load Bitrix settings
+            loadBitrixSettings();
         });
         
-        function loadIndianStates() {
-            // This would be replaced with an API call or full list
-            const states = [
-                {code: '01', name: 'Jammu and Kashmir'},
-                {code: '02', name: 'Himachal Pradesh'},
-                // ... all other states ...
-                {code: '22', name: 'Chhattisgarh'},
-                {code: '23', name: 'Madhya Pradesh'},
-                {code: '24', name: 'Maharashtra'},
-                // ... remaining states ...
-            ];
-            
-            const dropdown = $('#customer-state');
-            states.forEach(state => {
-                dropdown.append(`<option value="${state.code}">${state.name}</option>`);
+        function loadDashboardStats() {
+            $.get('api/get_stats.php', function(data) {
+                $('#month-invoices').text(data.month_invoices);
+                $('#month-revenue').text('₹' + data.month_revenue);
+                $('#pending-invoices').text(data.pending_invoices);
+                
+                // Populate recent invoices table
+                let html = '';
+                data.recent_invoices.forEach(invoice => {
+                    html += `
+                        <tr>
+                            <td>${invoice.invoice_number}</td>
+                            <td>${invoice.date}</td>
+                            <td>${invoice.customer_name}</td>
+                            <td>${invoice.customer_gstin}</td>
+                            <td>₹${invoice.total}</td>
+                            <td><span class="badge ${getStatusBadgeClass(invoice.status)}">${invoice.status}</span></td>
+                            <td>
+                                <a href="generate_pdf.php?invoice_id=${invoice.id}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-success send-invoice" data-id="${invoice.id}">
+                                    <i class="bi bi-envelope"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                $('#recent-invoices tbody').html(html);
             });
         }
         
-        function addNewItemRow() {
-            const rowCount = $('#invoice-items tbody tr').length + 1;
-            const newRow = `
-                <tr>
-                    <td>${rowCount}</td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm item-description" placeholder="Item description">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm item-hsn" placeholder="HSN/SAC">
-                    </td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm item-qty" value="1" min="1">
-                    </td>
-                    <td>
-                        <input type="number" class="form-control form-control-sm item-rate" value="0.00" min="0" step="0.01">
-                    </td>
-                    <td>
-                        <input type="text" class="form-control form-control-sm item-amount" value="0.00" readonly>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-danger remove-item">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            $('#invoice-items tbody').append(newRow);
-        }
-        
-        function removeItemRow() {
-            if ($('#invoice-items tbody tr').length > 1) {
-                $(this).closest('tr').remove();
-                updateRowNumbers();
-                calculateTotals();
-            } else {
-                alert("You must have at least one item in the invoice.");
+        function getStatusBadgeClass(status) {
+            switch(status.toLowerCase()) {
+                case 'paid': return 'bg-success';
+                case 'sent': return 'bg-info';
+                case 'draft': return 'bg-secondary';
+                default: return 'bg-warning';
             }
         }
         
-        function updateRowNumbers() {
-            $('#invoice-items tbody tr').each(function(index) {
-                $(this).find('td:first').text(index + 1);
+        function loadBitrixSettings() {
+            $.get('api/get_bitrix_settings.php', function(data) {
+                $('#bitrix-webhook').val(data.webhook_url);
+                $('#bitrix-token').val(data.auth_token);
+                $('#bitrix-template').val(data.invoice_template_id);
+                
+                // Update sync status
+                updateSyncStatus(data.sync_status);
             });
         }
         
-        function calculateItemAmount() {
-            const row = $(this).closest('tr');
-            const qty = parseFloat(row.find('.item-qty').val()) || 0;
-            const rate = parseFloat(row.find('.item-rate').val()) || 0;
-            const amount = qty * rate;
-            row.find('.item-amount').val(amount.toFixed(2));
-            calculateTotals();
-        }
-        
-        function calculateTotals() {
-            let subtotal = 0;
-            $('.item-amount').each(function() {
-                subtotal += parseFloat($(this).val()) || 0;
-            });
-            
-            $('#subtotal').text(`₹${subtotal.toFixed(2)}`);
-            // Taxes will be calculated in updateTaxRates()
-            updateTaxRates();
-        }
-        
-        function updateTaxRates() {
-            const stateCode = $('#customer-state').val();
-            const taxContainer = $('#tax-container');
-            taxContainer.empty();
-            
-            // Your business state (hardcoded for demo, should be from settings)
-            const businessState = '24'; // Maharashtra
-            
-            let taxHTML = '';
-            let totalTax = 0;
-            
-            if (stateCode === businessState) {
-                // CGST + SGST
-                const cgst = 9; // Example rate
-                const sgst = 9; // Example rate
-                const subtotal = parseFloat($('#subtotal').text().replace('₹', '')) || 0;
-                const cgstAmount = (subtotal * cgst / 100);
-                const sgstAmount = (subtotal * sgst / 100);
-                totalTax = cgstAmount + sgstAmount;
-                
-                taxHTML = `
-                    <div class="row mb-1">
-                        <div class="col-6 text-end">CGST (${cgst}%):</div>
-                        <div class="col-6 text-end">₹${cgstAmount.toFixed(2)}</div>
-                    </div>
-                    <div class="row mb-1">
-                        <div class="col-6 text-end">SGST (${sgst}%):</div>
-                        <div class="col-6 text-end">₹${sgstAmount.toFixed(2)}</div>
-                    </div>
-                `;
-            } else if (stateCode) {
-                // IGST
-                const igst = 18; // Example rate
-                const subtotal = parseFloat($('#subtotal').text().replace('₹', '')) || 0;
-                const igstAmount = (subtotal * igst / 100);
-                totalTax = igstAmount;
-                
-                taxHTML = `
-                    <div class="row mb-1">
-                        <div class="col-6 text-end">IGST (${igst}%):</div>
-                        <div class="col-6 text-end">₹${igstAmount.toFixed(2)}</div>
-                    </div>
-                `;
+        function updateSyncStatus(status) {
+            if (status.customers) {
+                $('#customer-sync-time').text(status.customers.last_sync);
+                $('#customer-sync-status').text(status.customers.status);
             }
-            
-            taxContainer.html(taxHTML);
-            
-            // Update total
-            const subtotal = parseFloat($('#subtotal').text().replace('₹', '')) || 0;
-            const total = subtotal + totalTax;
-            $('#total').text(`₹${total.toFixed(2)}`);
+            if (status.products) {
+                $('#product-sync-time').text(status.products.last_sync);
+                $('#product-sync-status').text(status.products.status);
+            }
+            if (status.invoices) {
+                $('#invoice-sync-time').text(status.invoices.last_sync);
+                $('#invoice-sync-status').text(status.invoices.status);
+            }
         }
         
-        function showInvoicePreview() {
-            // In a real implementation, this would send the form data to a server-side script
-            // that generates an HTML preview of the invoice
-            const previewFrame = $('#preview-frame');
-            previewFrame.attr('src', 'about:blank');
+        function saveBitrixSettings(e) {
+            e.preventDefault();
+            const data = {
+                webhook_url: $('#bitrix-webhook').val(),
+                auth_token: $('#bitrix-token').val(),
+                invoice_template_id: $('#bitrix-template').val()
+            };
             
-            // For demo purposes, we'll just show a message
-            const previewContent = `
-                <html>
-                    <head>
-                        <style>
-                            body { font-family: Arial, sans-serif; padding: 20px; }
-                            .invoice-header { text-align: center; margin-bottom: 30px; }
-                            .invoice-details { margin-bottom: 20px; }
-                            .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                            .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 8px; }
-                            .invoice-table th { background-color: #f2f2f2; }
-                            .text-right { text-align: right; }
-                            .total-section { margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="invoice-header">
-                            <h2>${$('#business-name').val()}</h2>
-                            <p>${$('#business-address').val()}</p>
-                            <p>GSTIN: ${$('#business-gstin').val()}</p>
-                            <h3>TAX INVOICE</h3>
-                        </div>
-                        
-                        <div class="row invoice-details">
-                            <div class="col">
-                                <p><strong>Invoice No:</strong> ${$('#invoice-number').val()}</p>
-                                <p><strong>Date:</strong> ${$('#invoice-date').val()}</p>
-                            </div>
-                            <div class="col">
-                                <p><strong>Customer:</strong> ${$('#customer-name').val() || 'Not specified'}</p>
-                                <p><strong>GSTIN:</strong> ${$('#customer-gstin').val() || 'Not specified'}</p>
-                            </div>
-                        </div>
-                        
-                        <table class="invoice-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Description</th>
-                                    <th>HSN/SAC</th>
-                                    <th>Qty</th>
-                                    <th>Rate</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${generatePreviewItems()}
-                            </tbody>
-                        </table>
-                        
-                        <div class="row total-section">
-                            <div class="col-md-6">
-                                <p><strong>Notes:</strong></p>
-                                <p>${$('#invoice-notes').val() || 'N/A'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Subtotal:</strong> ${$('#subtotal').text()}</p>
-                                ${$('#tax-container').html()}
-                                <p><strong>Total:</strong> ${$('#total').text()}</p>
-                            </div>
-                        </div>
-                    </body>
-                </html>
-            `;
-            
-            // For a real implementation, you would POST to a PHP script that generates the preview
-            // This is just a demo using data URLs (limited to ~2MB in most browsers)
-            previewFrame.attr('src', 'data:text/html;charset=utf-8,' + encodeURIComponent(previewContent));
-            
-            // Show the modal
-            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
-            previewModal.show();
-        }
-        
-        function generatePreviewItems() {
-            let itemsHTML = '';
-            $('#invoice-items tbody tr').each(function() {
-                const row = $(this);
-                itemsHTML += `
-                    <tr>
-                        <td>${row.find('td:first').text()}</td>
-                        <td>${row.find('.item-description').val() || 'Item description'}</td>
-                        <td>${row.find('.item-hsn').val() || 'N/A'}</td>
-                        <td>${row.find('.item-qty').val()}</td>
-                        <td>${parseFloat(row.find('.item-rate').val()).toFixed(2)}</td>
-                        <td>${row.find('.item-amount').val()}</td>
-                    </tr>
-                `;
+            $.post('api/save_bitrix_settings.php', data, function(response) {
+                alert('Settings saved successfully!');
             });
-            return itemsHTML;
+        }
+        
+        function testBitrixConnection() {
+            $.post('api/test_bitrix_connection.php', function(response) {
+                if (response.success) {
+                    alert('Connection successful! Bitrix24 version: ' + response.version);
+                } else {
+                    alert('Connection failed: ' + response.error);
+                }
+            });
+        }
+        
+        function syncWithBitrix() {
+            const type = $(this).data('type');
+            $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Syncing...');
+            
+            $.post('api/bitrix_sync.php', { type: type }, function(response) {
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} sync ${response.success ? 'completed' : 'failed'}`);
+                loadBitrixSettings(); // Refresh status
+            }).always(() => {
+                $(this).prop('disabled', false).text('Sync Now');
+            });
         }
     </script>
 </body>

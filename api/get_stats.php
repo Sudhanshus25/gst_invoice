@@ -15,7 +15,7 @@ try {
     $monthRevenue = $stmt->fetchColumn();
     
     // Get pending invoices
-    $stmt = $conn->query("SELECT COUNT(*) FROM invoices WHERE status = 'pending'");
+    $stmt = $conn->query("SELECT COUNT(*) FROM invoices WHERE payment_status = 'pending'");
     $pendingInvoices = $stmt->fetchColumn();
     
     // Get recent invoices

@@ -18,11 +18,6 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 }
 
 function findOrCreateCustomer($conn, $customerData) {
-    // If customer ID is provided, return it directly
-    if (!empty($customerData['id'])) {
-        return $customerData['id'];
-    }
-
     if (empty($customerData['gstin'])) {
         $stmt = $conn->prepare("SELECT id FROM customers WHERE name = :name AND billing_address = :billing_address LIMIT 1");
         $stmt->execute([
@@ -67,15 +62,12 @@ try {
     // Begin transaction
     $conn->beginTransaction();
     
-    // Check if this is an update to an existing invoice
-    $isUpdate = !empty($data['invoice_id']);
-    
-    // Validate minimum required data
+    // Validate minimum required data for a draft
     if (empty($data['customer']['name'])) {
         throw new Exception("Customer name is required");
     }
     
-    // Generate invoice number if not provided (for new drafts)
+    // Generate invoice number if not provided (for drafts)
     if (empty($data['invoice']['number'])) {
         $prefix = 'DRAFT';
         $year = date('y');
@@ -135,96 +127,43 @@ try {
     
     $grandTotal = $subtotal - $totalDiscount + $totalTax;
     
-    if ($isUpdate) {
-        // Update existing invoice
-        $stmt = $conn->prepare("
-            UPDATE invoices SET
-                invoice_number = :invoice_number,
-                invoice_date = :invoice_date,
-                due_date = :due_date,
-                customer_id = :customer_id,
-                subtotal = :subtotal,
-                discount_amount = :discount_amount,
-                cgst_amount = :cgst_amount,
-                sgst_amount = :sgst_amount,
-                igst_amount = :igst_amount,
-                tax_amount = :tax_amount,
-                total = :total,
-                tax_type = :tax_type,
-                place_of_supply = :place_of_supply,
-                supply_type = :supply_type,
-                payment_status = :payment_status,
-                notes = :notes,
-                terms = :terms,
-                status = :status
-            WHERE id = :invoice_id
-        ");
-        
-        $stmt->execute([
-            ':invoice_id' => $data['invoice_id'],
-            ':invoice_number' => $data['invoice']['number'],
-            ':invoice_date' => $data['invoice']['date'],
-            ':due_date' => $data['invoice']['due_date'],
-            ':customer_id' => $customerId,
-            ':subtotal' => $subtotal,
-            ':discount_amount' => $totalDiscount,
-            ':cgst_amount' => $cgstAmount,
-            ':sgst_amount' => $sgstAmount,
-            ':igst_amount' => $igstAmount,
-            ':tax_amount' => $totalTax,
-            ':total' => $grandTotal,
-            ':tax_type' => ($data['customer']['state'] ?? '') === $businessState ? 'cgst_sgst' : 'igst',
-            ':place_of_supply' => $data['customer']['state'] ?? '',
-            ':supply_type' => $data['invoice']['supply_type'] ?? 'regular',
-            ':payment_status' => $data['invoice']['payment_status'] ?? 'unpaid',
-            ':notes' => $data['invoice']['notes'] ?? '',
-            ':terms' => $data['invoice']['terms'] ?? '',
-            ':status' => $data['status'] ?? 'draft'
-        ]);
-        
-        $invoiceId = $data['invoice_id'];
-        
-        // Delete existing items
-        $conn->exec("DELETE FROM invoice_items WHERE invoice_id = $invoiceId");
-    } else {
-        // Create new invoice
-        $stmt = $conn->prepare("
-            INSERT INTO invoices (
-                invoice_number, invoice_date, due_date, customer_id,
-                subtotal, discount_amount, cgst_amount, sgst_amount, igst_amount,
-                tax_amount, total, tax_type, place_of_supply,
-                supply_type, payment_status, notes, terms, status
-            ) VALUES (
-                :invoice_number, :invoice_date, :due_date, :customer_id,
-                :subtotal, :discount_amount, :cgst_amount, :sgst_amount, :igst_amount,
-                :tax_amount, :total, :tax_type, :place_of_supply,
-                :supply_type, :payment_status, :notes, :terms, :status
-            )
-        ");
-        
-        $stmt->execute([
-            ':invoice_number' => $data['invoice']['number'],
-            ':invoice_date' => $data['invoice']['date'],
-            ':due_date' => $data['invoice']['due_date'],
-            ':customer_id' => $customerId,
-            ':subtotal' => $subtotal,
-            ':discount_amount' => $totalDiscount,
-            ':cgst_amount' => $cgstAmount,
-            ':sgst_amount' => $sgstAmount,
-            ':igst_amount' => $igstAmount,
-            ':tax_amount' => $totalTax,
-            ':total' => $grandTotal,
-            ':tax_type' => ($data['customer']['state'] ?? '') === $businessState ? 'cgst_sgst' : 'igst',
-            ':place_of_supply' => $data['customer']['state'] ?? '',
-            ':supply_type' => $data['invoice']['supply_type'] ?? 'regular',
-            ':payment_status' => $data['invoice']['payment_status'] ?? 'unpaid',
-            ':notes' => $data['invoice']['notes'] ?? '',
-            ':terms' => $data['invoice']['terms'] ?? '',
-            ':status' => $data['status'] ?? 'draft'
-        ]);
-        
-        $invoiceId = $conn->lastInsertId();
-    }
+    // Save the invoice
+    $stmt = $conn->prepare("
+        INSERT INTO invoices (
+            invoice_number, invoice_date, due_date, customer_id,
+            subtotal, discount_amount, cgst_amount, sgst_amount, igst_amount,
+            tax_amount, total, tax_type, place_of_supply,
+            supply_type, payment_status, notes, terms, status
+        ) VALUES (
+            :invoice_number, :invoice_date, :due_date, :customer_id,
+            :subtotal, :discount_amount, :cgst_amount, :sgst_amount, :igst_amount,
+            :tax_amount, :total, :tax_type, :place_of_supply,
+            :supply_type, :payment_status, :notes, :terms, :status
+        )
+    ");
+    
+    $stmt->execute([
+        ':invoice_number' => $data['invoice']['number'],
+        ':invoice_date' => $data['invoice']['date'],
+        ':due_date' => $data['invoice']['due_date'],
+        ':customer_id' => $customerId,
+        ':subtotal' => $subtotal,
+        ':discount_amount' => $totalDiscount,
+        ':cgst_amount' => $cgstAmount,
+        ':sgst_amount' => $sgstAmount,
+        ':igst_amount' => $igstAmount,
+        ':tax_amount' => $totalTax,
+        ':total' => $grandTotal,
+        ':tax_type' => ($data['customer']['state'] ?? '') === $businessState ? 'cgst_sgst' : 'igst',
+        ':place_of_supply' => $data['customer']['state'] ?? '',
+        ':supply_type' => $data['invoice']['supply_type'] ?? 'regular',
+        ':payment_status' => $data['invoice']['payment_status'] ?? 'unpaid',
+        ':notes' => $data['invoice']['notes'] ?? '',
+        ':terms' => $data['invoice']['terms'] ?? '',
+        ':status' => $data['status'] ?? 'draft' // Add status field
+    ]);
+    
+    $invoiceId = $conn->lastInsertId();
     
     // Save items if they exist
     if (!empty($data['items']) && is_array($data['items'])) {
@@ -294,7 +233,7 @@ try {
         'success' => true, 
         'invoice_id' => $invoiceId,
         'invoice_number' => $data['invoice']['number'],
-        'message' => $isUpdate ? 'Invoice updated successfully' : 'Invoice saved successfully'
+        'message' => 'Invoice saved successfully as draft'
     ]);
     
 } catch (Exception $e) {
@@ -302,6 +241,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Failed to save invoice: ' . $e->getMessage()
+        'error' => 'Failed to save invoice: ' . $e->getMessage(),
+        'input_data' => $data // For debugging only - remove in production
     ]);
 }

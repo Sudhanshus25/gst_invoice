@@ -40,9 +40,11 @@ try {
             id,
             name,
             gstin,
+            pan,
             phone,
             email,
-            address,
+            billing_address,
+            shipping_address,
             state_code,
             created_at,
             updated_at

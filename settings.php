@@ -92,7 +92,7 @@ $states = [
     '35' => 'Andaman and Nicobar Islands',
     '36' => 'Telangana',
     '37' => 'Andhra Pradesh (New)',
-    '97' => 'Other Territory',
+    '97' => 'Other Territory'
 ];
 ?>
 

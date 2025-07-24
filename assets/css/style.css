@@ -70,3 +70,53 @@ body {
         padding: 1rem;
     }
 }
+
+/* Product search dropdown */
+#product-results {
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    position: absolute;
+    z-index: 1000;
+}
+
+.product-suggestion {
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.product-suggestion:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item {
+    white-space: normal;
+}
+
+/* Add to your style.css */
+.item-suggestions {
+    position: absolute;
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    width: calc(100% - 30px);
+    box-shadow: 0 6px 12px rgba(0,0,0,.175);
+}
+
+.item-suggestion {
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.item-suggestion:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item {
+    white-space: normal;
+}
+
+#summary-container {
+    transition: all 0.3s ease;
+}

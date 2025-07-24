@@ -186,7 +186,9 @@ try {
     
     switch ($action) {
         case 'sync':
-            if ($method !== 'POST') throw new Exception('Invalid method');
+            if ($method !== 'POST') {
+                throw new Exception('Invalid method', 400);
+            }
             $products = $manager->syncProducts();
             echo json_encode([
                 'success' => true,
