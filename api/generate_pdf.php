@@ -2,11 +2,6 @@
 // Load Composer autoloader — same logic as in test_mpdf.php
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 
-if (!file_exists($autoloadPath)) {
-    die("Autoloader not found at: $autoloadPath<br>
-         Run: <code>composer require mpdf/mpdf</code> in your project root.");
-}
-
 require_once $autoloadPath;
 
 // Check if mPDF is available
