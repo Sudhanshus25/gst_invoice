@@ -38,6 +38,7 @@ if (isset($_GET['test_sync'])) {
                 'bitrix_id' => $bitrixProduct['ID'],
                 'name' => $bitrixProduct['NAME'],
                 'rate' => $bitrixProduct['PRICE'],
+                'discount' => $bitrixProduct['DISCOUNT'] ?? 0,
                 'tax_rate' => ($bitrixProduct['VAT_INCLUDED'] === 'Y') ? 18 : 0,
                 'is_service' => 1, // Default to service (adjust as needed)
                 'hsn_sac_code' => $bitrixProduct['CODE'] ?? '', // Using CODE as HSN/SAC if available
@@ -52,11 +53,12 @@ if (isset($_GET['test_sync'])) {
             if ($existing) {
                 // Update existing product
                 $stmt = $conn->prepare("UPDATE products SET 
-                    name = ?, rate = ?, tax_rate = ?, description = ?, hsn_sac_code = ?
+                    name = ?, rate = ?, discount = ?, tax_rate = ?, description = ?, hsn_sac_code = ?
                     WHERE bitrix_id = ?");
                 $stmt->execute([
                     $productData['name'],
                     $productData['rate'],
+                    $productData['discount'],
                     $productData['tax_rate'],
                     $productData['description'],
                     $productData['hsn_sac_code'],
@@ -65,11 +67,12 @@ if (isset($_GET['test_sync'])) {
             } else {
                 // Insert new product
                 $stmt = $conn->prepare("INSERT INTO products 
-                    (name, rate, tax_rate, is_service, hsn_sac_code, description, bitrix_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    (name, rate, discount, tax_rate, is_service, hsn_sac_code, description, bitrix_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $productData['name'],
                     $productData['rate'],
+                    $productData['discount'],
                     $productData['tax_rate'],
                     $productData['is_service'],
                     $productData['hsn_sac_code'],
@@ -88,32 +91,52 @@ if (isset($_GET['test_sync'])) {
     }
 }
 
-
-
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $action = $_POST['action'] ?? '';
         $id = $_POST['id'] ?? 0;
         
-        if ($action === 'add' || $action === 'edit') {
+        if ($action === 'add' || $action === 'edit' || $action === 'quick_add') {
             $name = sanitizeInput($_POST['name']);
             $description = sanitizeInput($_POST['description']);
             $hsn_sac = sanitizeInput($_POST['hsn_sac']);
             $rate = (float)$_POST['rate'];
-            $tax_rate = (float)$_POST['tax_rate'];
             $discount = isset($_POST['discount']) ? (float)$_POST['discount'] : 0;
+            $tax_rate = (float)$_POST['tax_rate'];
             $is_service = isset($_POST['is_service']) ? 1 : 0;
             
-            if ($action === 'add') {
-                $stmt = $conn->prepare("INSERT INTO products (name, description, hsn_sac_code, rate, tax_rate, discount, is_service) 
-                                      VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $description, $hsn_sac, $rate, $tax_rate, $discount, $is_service]);
+            if ($action === 'add' || $action === 'quick_add') {
+                $stmt = $conn->prepare("INSERT INTO products (name, description, hsn_sac_code, rate, discount, tax_rate, is_service) 
+                                      VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $description, $hsn_sac, $rate, $discount, $tax_rate, $is_service]);
+                $message = "Product added successfully!";
+                $productId = $conn->lastInsertId();
+                
+                // For quick_add, return JSON response
+                if ($action === 'quick_add') {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Product added successfully',
+                        'product' => [
+                            'id' => $productId,
+                            'name' => $name,
+                            'hsn_sac_code' => $hsn_sac,
+                            'rate' => $rate,
+                            'discount' => $discount,
+                            'tax_rate' => $tax_rate,
+                            'is_service' => $is_service
+                        ]
+                    ]);
+                    exit;
+                }
+                
                 $message = "Product added successfully!";
             } else {
-                $stmt = $conn->prepare("UPDATE products SET name=?, description=?, hsn_sac_code=?, rate=?, tax_rate=?, discount=?, is_service=? 
+                $stmt = $conn->prepare("UPDATE products SET name=?, description=?, hsn_sac_code=?, rate=?, discount=?, tax_rate=?, is_service=? 
                                       WHERE id=?");
-                $stmt->execute([$name, $description, $hsn_sac, $rate, $tax_rate, $discount, $is_service, $id]);
+                $stmt->execute([$name, $description, $hsn_sac, $rate, $discount, $tax_rate, $is_service, $id]);
                 $message = "Product updated successfully!";
             }
         } elseif ($action === 'delete') {
@@ -147,7 +170,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (PDOException $e) {
         $error = "Database error: " . $e->getMessage();
     } catch (Exception $e) {
-        $error = "Error: " . $e->getMessage();
+        // For quick_add, return JSON error
+        if ($action === 'quick_add') {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            exit;
+        }
     }
 }
 
@@ -220,7 +251,6 @@ $products = $conn->query("SELECT * FROM products ORDER BY name")->fetchAll(PDO::
                         <td>
                             <?php if ($discount > 0): ?>
                                 <span class="discounted-price">₹<?= number_format($product['rate'], 2) ?></span>
-                                ₹<?= number_format($discountedPrice, 2) ?>
                             <?php else: ?>
                                 ₹<?= number_format($product['rate'], 2) ?>
                             <?php endif; ?>

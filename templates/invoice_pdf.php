@@ -1,60 +1,64 @@
 <?php
-// This template is used by the PDF generator
+require_once __DIR__ . '/../includes/tax_calculator.php';
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Invoice <?= htmlspecialchars($invoice['invoice_number']) ?></title>
-    <style>
-        body { font-family: DejaVu Sans, sans-serif; margin: 0; padding: 20px; color: #333; }
-        .invoice-container { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; }
-        .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .company-info { flex: 1; }
-        .invoice-info { flex: 1; text-align: right; }
-        .title { text-align: center; margin: 20px 0; font-size: 24px; font-weight: bold; }
-        .customer-info { margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .text-right { text-align: right; }
-        .totals { float: right; width: 300px; }
-        .footer { margin-top: 50px; font-size: 12px; text-align: center; }
-        .signature { margin-top: 50px; text-align: right; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/pdf-template.css">
 </head>
 <body>
     <div class="invoice-container">
         <div class="header">
-            <div class="company-info">
-                <h2><?= htmlspecialchars($invoice['business_name'] ?? 'Your Business Name') ?></h2>
-                <p><?= nl2br(htmlspecialchars($invoice['business_address'] ?? '123 Business Street, City, State - 123456')) ?></p>
-                <p>GSTIN: <?= htmlspecialchars($invoice['business_gstin'] ?? '22AAAAA0000A1Z5') ?></p>
+            <div class="company-name"><?= htmlspecialchars($invoice['business_name'] ?? 'Instloo Private Limited') ?></div>
+            <div class="company-address"><?= nl2br(htmlspecialchars($invoice['business_address'] ?? 'A 2402, Prateeek Edifice Sector 107 Noida 201304')) ?></div>
+            <div class="gstin">GSTIN: <?= htmlspecialchars($invoice['business_gstin'] ?? '09AAECI8350C1ZN') ?></div>
+        </div>
+
+        <div class="invoice-info">
+            <div>
+                <strong>Invoice No.:</strong> <span><?= htmlspecialchars($invoice['invoice_number']) ?></span>
             </div>
-            <div class="invoice-info">
-                <h3>TAX INVOICE</h3>
-                <p><strong>Invoice #:</strong> <?= htmlspecialchars($invoice['invoice_number']) ?></p>
-                <p><strong>Date:</strong> <?= htmlspecialchars($invoice['invoice_date']) ?></p>
-                <p><strong>Due Date:</strong> <?= htmlspecialchars($invoice['due_date']) ?></p>
+            <div>
+                <strong>Invoice Date:</strong> <span><?= htmlspecialchars($invoice['invoice_date']) ?></span>
+            </div>
+            <div>
+                <strong>Order#:</strong> <span><?= htmlspecialchars($invoice['order_number'] ?? '') ?></span>
             </div>
         </div>
-        
-        <div class="customer-info">
-            <h4>Bill To:</h4>
-            <p><strong><?= htmlspecialchars($invoice['customer_name']) ?></strong></p>
-            <p>GSTIN: <?= htmlspecialchars($invoice['customer_gstin']) ?></p>
-            <p><?= nl2br(htmlspecialchars($invoice['customer_address'])) ?></p>
-            <p>State: <?= TaxCalculator::getStateName($invoice['customer_state']) ?></p>
+
+        <div class="bill-to">
+            <h2>Bill To</h2>
+            <div><strong><?= htmlspecialchars($invoice['customer_name']) ?></strong></div>
+            <div>
+                <?php if (!empty($invoice['customer_phone'])): ?>
+                Tel.: <?= htmlspecialchars($invoice['customer_phone']) ?><br>
+                <?php endif; ?>
+                <?php if (!empty($invoice['customer_email'])): ?>
+                Email: <?= htmlspecialchars($invoice['customer_email']) ?><br>
+                <?php endif; ?>
+                <?php if (!empty($invoice['customer_website'])): ?>
+                Website: <?= htmlspecialchars($invoice['customer_website']) ?><br>
+                <?php endif; ?>
+            </div>
         </div>
-        
+
+        <div class="delivery-info">
+            <strong>Place of Delivery</strong><br>
+            GSTIN: <?= htmlspecialchars($invoice['customer_gstin']) ?>
+        </div>
+
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th>HSN/SAC</th>
+                    <th>No</th>
+                    <th>Item</th>
+                    <th>HSN</th>
                     <th>Qty</th>
-                    <th>Rate</th>
+                    <th>Unit Price</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
                     <th>Amount</th>
                 </tr>
             </thead>
@@ -66,31 +70,62 @@
                     <td><?= htmlspecialchars($item['hsn_sac_code']) ?></td>
                     <td><?= htmlspecialchars($item['quantity']) ?></td>
                     <td class="text-right">₹<?= number_format($item['rate'], 2) ?></td>
-                    <td class="text-right">₹<?= number_format($item['amount'], 2) ?></td>
+                    <td class="text-right"><?= $item['discount_amount'] > 0 ? number_format($item['discount_percentage'], 0).'%' : '0%' ?></td>
+                    <td class="text-right"><?= number_format($item['tax_rate'] ?? 14, 0) ?>%</td>
+                    <td class="text-right">₹<?= number_format($item['total_amount'], 2) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        
-        <div class="totals">
-            <p><strong>Subtotal:</strong> ₹<?= number_format($invoice['subtotal'], 2) ?></p>
+
+        <div class="amount-summary">
+            <div>
+                <span>Net Amount</span>
+                <span>₹<?= number_format($invoice['subtotal'], 2) ?></span>
+            </div>
+            <div>
+                <span>Discount</span>
+                <span>₹<?= number_format($invoice['discount_amount'] ?? 0, 2) ?></span>
+            </div>
+            <div>
+                <span>GST <?= number_format($invoice['tax_rate'] ?? 14, 0) ?>%</span>
+                <span>₹<?= number_format($invoice['tax_amount'], 2) ?></span>
+            </div>
             <?php if ($invoice['customer_state'] === TaxCalculator::BUSINESS_STATE): ?>
-                <p><strong>CGST (9%):</strong> ₹<?= number_format($invoice['tax_amount'] / 2, 2) ?></p>
-                <p><strong>SGST (9%):</strong> ₹<?= number_format($invoice['tax_amount'] / 2, 2) ?></p>
-            <?php else: ?>
-                <p><strong>IGST (18%):</strong> ₹<?= number_format($invoice['tax_amount'], 2) ?></p>
+                <div>
+                    <span>CGST</span>
+                    <span>₹<?= number_format($invoice['tax_amount'] / 2, 2) ?></span>
+                </div>
+                <div>
+                    <span>SGST</span>
+                    <span>₹<?= number_format($invoice['tax_amount'] / 2, 2) ?></span>
+                </div>
             <?php endif; ?>
-            <p><strong>Total:</strong> ₹<?= number_format($invoice['total'], 2) ?></p>
+            <div>
+                <span>Tax Total</span>
+                <span>₹<?= number_format($invoice['tax_amount'], 2) ?></span>
+            </div>
+            <div class="total-amount">
+                <span>Amount Due</span>
+                <span>₹<?= number_format($invoice['total'], 2) ?></span>
+            </div>
         </div>
-        
+
+        <div class="terms">
+            <strong>Terms & Conditions</strong><br>
+            <?= nl2br(htmlspecialchars($invoice['terms'] ?? '*Total Payment due before delivery.
+*Goods once sold will not be taken back
+*Please include the invoice number on your Cheque
+*Cheque bounce charges Rs. 500 will be charged.
+*warranty/guarantee is responsible to Principal company')) ?>
+        </div>
+
         <div class="signature">
-            <p>Authorized Signatory</p>
-            <p><strong><?= htmlspecialchars($invoice['business_name'] ?? 'Your Business Name') ?></strong></p>
+            Authorized Signature
         </div>
-        
+
         <div class="footer">
-            <p><?= nl2br(htmlspecialchars($invoice['terms'])) ?></p>
-            <p><?= nl2br(htmlspecialchars($invoice['notes'])) ?></p>
+            <?= htmlspecialchars($invoice['notes'] ?? 'Thank you for your business!') ?>
         </div>
     </div>
 </body>

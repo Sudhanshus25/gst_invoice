@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/db_connect.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/tax_calculator.php';
+require_once 'includes/tax_calculator.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -168,7 +169,7 @@ $customers = $conn->query("SELECT * FROM customers ORDER BY name")->fetchAll(PDO
                         
                         <div class="mb-3">
                             <label class="form-label">State</label>
-                            <select class="form-select" name="state_code" id="customerState" required>
+                            <select id="state" name="customer[state]" class="form-control" required>
                                 <option value="">Select State</option>
                                 <?php 
                                 $states = [

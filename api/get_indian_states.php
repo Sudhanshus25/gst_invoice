@@ -43,3 +43,4 @@ $indianStates = [
 ];
 
 echo json_encode($indianStates);
+

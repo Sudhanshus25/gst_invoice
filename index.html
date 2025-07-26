@@ -258,7 +258,7 @@
                                                 <td>
                                                     <input type="text" class="form-control form-control-sm item-description" 
                                                         placeholder="Type or click to select an item" autocomplete="off">
-                                                    <div class="dropdown-menu w-100 item-suggestions"></div>
+                                                    <div class="dropdown-menu w-75 item-suggestions"></div>
                                                     <!-- <small class="text-muted">Thanks for your business. Will be displayed on the invoice</small> -->
                                                 </td>
                                                 <td>
@@ -498,7 +498,7 @@
                             <td>₹${invoice.total}</td>
                             <td><span class="badge ${getStatusBadgeClass(invoice.status)}">${invoice.status}</span></td>
                             <td>
-                                <a href="generate_pdf.php?invoice_id=${invoice.id}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <a href="api/generate_pdf.php?invoice_id=${invoice.id}" target="_blank" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-file-earmark-pdf"></i>
                                 </a>
                                 <button class="btn btn-sm btn-outline-success send-invoice" data-id="${invoice.id}">

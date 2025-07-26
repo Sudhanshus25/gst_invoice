@@ -77,6 +77,7 @@ class GSTInvoiceApp {
                     row.find('.item-description').val(product.name);
                     row.find('.item-hsn').val(product.hsn_sac_code);
                     row.find('.item-rate').val(product.price);
+                    row.find('.item-discount').val(product.discount);
                     row.find('.item-tax').val(product.tax_rate);
                     row.find('.item-unit').val(product.unit || 'unit');
                     row.data('product-id', product.id);
@@ -126,6 +127,11 @@ class GSTInvoiceApp {
         
         if (products.length === 0) {
             suggestions.append('<div class="dropdown-item">No products found</div>');
+            suggestions.append(`
+                <div class="item-suggestion add-new-item" data-search="${query}">
+                    <i class="bi bi-plus-circle"></i> Add New Item: "${query}"
+                </div>
+            `);
         } else {
             products.forEach(product => {
                 const rate = parseFloat(product.rate) || 0;
@@ -145,6 +151,11 @@ class GSTInvoiceApp {
                 `);
                 suggestions.append(item);
             });
+            suggestions.append(`
+                <div class="item-suggestion add-new-item" data-search="${query}">
+                    <i class="bi bi-plus-circle"></i> Add New Item: "${query}"
+                </div>
+            `);
         }
         
         suggestions.show();
@@ -185,6 +196,124 @@ class GSTInvoiceApp {
         
         row.find('.item-suggestions').hide().empty();
         this.calculateItemAmount(row);
+
+        if (suggestion.hasClass('add-new-item')) {
+            // Handle "Add New" click
+            const searchTerm = suggestion.data('search');
+            this.showAddItemModal(searchTerm, row);
+        } 
+    }
+
+    showAddItemModal(searchTerm, row) {
+        // Create or show your modal
+        const modal = $('#addItemModal');
+        
+        if (modal.length === 0) {
+            // Create the modal if it doesn't exist
+            $('body').append(`
+                <div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="quickAddItemForm">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Add New Item</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="quick_add">
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Name *</label>
+                                        <input type="text" class="form-control" name="name" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">HSN/SAC Code</label>
+                                        <input type="text" class="form-control" name="hsn_sac">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Rate (₹) *</label>
+                                        <input type="number" class="form-control" name="rate" step="0.01" min="0" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Discount (%)</label>
+                                        <input type="number" class="form-control" name="discount" id="productDiscount" step="0.01" min="0" max="100" value="0">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Tax Rate (%) *</label>
+                                        <input type="number" class="form-control" name="tax_rate" step="0.01" min="0" max="100" value="18" required>
+                                    </div>
+                                    
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" name="is_service" id="quickIsService">
+                                        <label class="form-check-label" for="quickIsService">This is a service</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Add Item</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Initialize the modal
+            this.initQuickAddForm(row);
+        }
+        
+        // Set the search term as the default name
+        $('#addItemModal input[name="name"]').val(searchTerm);
+        
+        // Show the modal
+        $('#addItemModal').modal('show');
+    }
+
+    initQuickAddForm(row) {
+        $('#quickAddItemForm').submit((e) => {
+            e.preventDefault();
+
+            const formData = {
+                action: 'quick_add',
+                name: $('#quickAddItemForm input[name="name"]').val(),
+                rate: $('#quickAddItemForm input[name="rate"]').val(),
+                tax_rate: $('#quickAddItemForm input[name="tax_rate"]').val(),
+                hsn_sac: $('#quickAddItemForm input[name="hsn_sac"]').val() || '',
+                discount: $('#quickAddItemForm input[name="discount"]').val() || 0,
+                is_service: $('#quickAddItemForm input[name="is_service"]').is(':checked') ? 1 : 0,
+                description: '' // Optional field
+            };
+            
+            $.ajax({
+                url: `${this.baseUrl}/products.php`,
+                method: 'POST',
+                data: formData,
+                success: (response) => {
+                    if (response.success) {
+                        // Populate the row with the new product
+                        row.find('.item-description').val(response.product.name);
+                        row.find('.item-hsn').val(response.product.hsn_sac_code);
+                        row.find('.item-rate').val(response.product.rate);
+                        row.find('.item-discount').val(response.product.discount);
+                        row.find('.item-tax').val(response.product.tax_rate);
+                        row.data('product-id', response.product.id);
+                        this.calculateItemAmount(row);
+                        
+                        // Close the modal
+                        $('#addItemModal').modal('hide');
+                    } else {
+                        alert('Error: ' + (response.message || 'Failed to add product'));
+                    }
+                },
+                error: () => {
+                    alert('Error adding item');
+                }
+            });
+        });
     }
 
     calculateItemAmount(rowElement = null) {
@@ -618,8 +747,7 @@ class GSTInvoiceApp {
         try {
             const response = await $.ajax({
                 url: `${this.baseUrl}api/get_customers.php`,
-                dataType: 'json',
-                // timeout: 5000 // 5 second timeout
+                dataType: 'json'
             });
 
             if (!response.success) {
@@ -628,8 +756,8 @@ class GSTInvoiceApp {
 
             const dropdown = $('#customer-select');
             dropdown.empty().append('<option value="">Select Customer</option>');
-            
-            if (response.data && response.data.length > 0) {
+
+            if (Array.isArray(response.data) && response.data.length > 0) {
                 response.data.forEach(customer => {
                     dropdown.append(
                         `<option value="${customer.id}" 
@@ -643,21 +771,17 @@ class GSTInvoiceApp {
             } else {
                 this.showAlert('Info', 'No customers found in database', 'info');
             }
-            
+
             dropdown.append('<option value="new">+ Add New Customer</option>');
-            
+
         } catch (error) {
             console.error('Failed to load customers:', error);
             this.showAlert('Error', 
                 `Failed to load customers: ${error.message || 'Unknown error'}`, 
                 'error');
-            
-            // Check if it's a connection error
-            if (error.statusText === 'timeout' || error.status === 0) {
-                console.error('Server might be down or CORS issue');
-            }
         }
     }
+    
 
     async loadCustomerDetails() {
         const customerId = $('#customer-select').val();
@@ -977,6 +1101,10 @@ addProductToInvoice(product) {
             <td>
                 <input type="number" class="form-control form-control-sm item-rate" 
                        value="${product.rate || '0.00'}" min="0" step="0.01">
+            </td>
+            <td>
+                <input type="number" class="form-control form-control-sm item-discount" 
+                       value="${product.discount || '0.00'}" min="0" step="0.01">
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm item-amount" value="0.00" readonly>
@@ -1420,5 +1548,22 @@ $(document).ready(function() {
             // View finalized invoice
             window.open(`view_invoice.php?id=${invoiceId}`, '_blank');
         }
+    });
+
+    // Fill customer details when a customer is selected
+    $('#customer-select').on('change', function () {
+        const selected = $(this).find('option:selected');
+
+        const gstin = selected.data('gstin') || '';
+        const state = selected.data('state') || '';
+        const address = selected.data('address') || '';
+        const name = selected.text().trim();
+
+        // console.log('Selected Option Values:', { gstin, state, address, name });
+
+        $('#customer-name').val(name);
+        $('#customer-gstin').val(gstin);
+        $('#customer-state').val(state);
+        $('#customer-address').val(address);
     });
 });

@@ -1,5 +1,5 @@
 <?php
-// Load Composer autoloader — same logic as in test_mpdf.php
+
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 
 require_once $autoloadPath;
@@ -54,18 +54,8 @@ try {
     include __DIR__ . '/../templates/invoice_pdf.php';
     $html = ob_get_clean();
 
-    // Optionally save HTML for debugging
-    // file_put_contents(__DIR__ . '/../tmp/debug_invoice.html', $html);
-
-    // Setup temp directory
-    $tempDir = __DIR__ . '/../tmp';
-    if (!file_exists($tempDir)) {
-        mkdir($tempDir, 0777, true);
-    }
-
     // Create PDF
     $mpdf = new \Mpdf\Mpdf([
-        'tempDir' => $tempDir,
         'default_font' => 'dejavusans'
     ]);
 

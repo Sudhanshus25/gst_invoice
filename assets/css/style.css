@@ -100,7 +100,6 @@ body {
     max-height: 300px;
     overflow-y: auto;
     display: none;
-    width: calc(100% - 30px);
     box-shadow: 0 6px 12px rgba(0,0,0,.175);
 }
 
@@ -111,10 +110,6 @@ body {
 
 .item-suggestion:hover {
     background-color: #f8f9fa;
-}
-
-.dropdown-item {
-    white-space: normal;
 }
 
 #summary-container {
